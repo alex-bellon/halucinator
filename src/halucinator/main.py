@@ -3,8 +3,8 @@
 # certain rights in this software.
 
 import yaml
-from avatar2 import Avatar, QemuTarget, ARM_CORTEX_M3, ARM, ARM64, TargetStates
-from .qemu_targets import ARMQemuTarget, ARMv7mQemuTarget, ARM64QemuTarget
+from avatar2 import Avatar, QemuTarget, ARM_CORTEX_M3, ARM, ARM64, M68K, TargetStates
+from .qemu_targets import ARMQemuTarget, ARMv7mQemuTarget, ARM64QemuTarget, M68KQemuTarget
 from avatar2.peripherals.avatar_peripheral import AvatarPeripheral
 import logging
 import os
@@ -31,8 +31,8 @@ hal_log.setLogConfig()
 
 PATCH_MEMORY_SIZE = 4096
 INTERCEPT_RETURN_INSTR_ADDR = 0x20000000 - PATCH_MEMORY_SIZE
-ARCH_LUT={'cortex-m3': ARM_CORTEX_M3, 'arm': ARM, 'arm64': ARM64}
-QEMU_ARCH_LUT={'cortex-m3': ARMv7mQemuTarget, 'arm': ARMQemuTarget, 'arm64': ARM64QemuTarget}
+ARCH_LUT={'cortex-m3': ARM_CORTEX_M3, 'arm': ARM, 'arm64': ARM64, 'm68k': M68K}
+QEMU_ARCH_LUT={'cortex-m3': ARMv7mQemuTarget, 'arm': ARMQemuTarget, 'arm64': ARM64QemuTarget, 'm68k': M6KQemuTarget}
 
 
 def add_patch_memory(avatar, qemu):
@@ -99,14 +99,18 @@ def find_qemu(arch):
     then fall back to 
     <halucinator-root>/deps/avatar2/target/build/qemu/arm-softmmu/qemu-system-arm, 
     and then <halucinator-root>/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+    and then <halucinator-root>/deps/avatar2/targets/build/qemu/m68k-softmmu/qemu-system-m68k
         
     '''
     arm32 = "../../deps/avatar2/target/build/qemu/arm-softmmu/qemu-system-arm"
     aarch64 = "../../deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64"
+    m68k = "../../deps/avatar2/targets/build/qemu/m68k-softmmu/qemu-system-m68k"
     arm32_default_path = os.path.realpath(os.path.join(
         os.path.dirname(__file__), arm32))
     aarch64_default_path = os.path.realpath(os.path.join(
         os.path.dirname(__file__), aarch64))
+    m68k_default_path = os.path.realpath(os.path.join(
+        os.path.dirname(__file__), m68k))
 
     if arch == ARM64:
         if os.environ.get("HALUCINATOR_QEMU_ARM64") is not None:
@@ -118,7 +122,7 @@ def find_qemu(arch):
         if os.path.exists(aarch64_default_path):
             return aarch64_default_path
 
-        log.error("QEMU NOT FOUND.\n Set environment variable $HALUCINATOR_QEMU_ARM to full path of avatar-qemu binary")
+        log.error("QEMU NOT FOUND.\n Set environment variable $HALUCINATOR_QEMU_ARM64 to full path of avatar-qemu binary")
         exit(-1)
     elif arch == ARM_CORTEX_M3 or arch == ARM:
         if os.environ.get("HALUCINATOR_QEMU_ARM") is not None:
@@ -132,9 +136,22 @@ def find_qemu(arch):
    
         log.error("QEMU NOT FOUND.\n Set environment variable $HALUCINATOR_QEMU_ARM to full path of avatar-qemu binary")
         exit(-1)
+    elif arch == M68K:
+        if os.environ.get("HALUCINATOR_QEMU_M68K") is not None:
+            if not os.path.exists(os.environ.get("HALUCINATOR_QEMU_M68K")):
+                log.error('Path of "$HALUCINATOR_QEMU_M68K" is invalid"')
+                exit(1)
+            return os.environ.get("HALUCINATOR_QEMU_M68K")
+
+        if os.path.exists(m68k_default_path):
+            return m68k_default_path
+   
+        log.error("QEMU NOT FOUND.\n Set environment variable $HALUCINATOR_QEMU_M68K to full path of avatar-qemu binary")
+        exit(-1)
+
     
     log.error("QEMU Target not found for architecture")
-    log.error("Set environment variables HALUCINATOR_QEMU_ARM and/or HALUCINATOR_QEMU_ARM64")
+    log.error("Set environment variables HALUCINATOR_QEMU_ARM, HALUCINATOR_QEMU_ARM64, and/or HALUCINATOR_QEMU_M68K")
     exit(1)
 
 
