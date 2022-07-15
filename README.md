@@ -69,43 +69,36 @@ Note:  This has been lightly tested on Ubuntu 18.04 and 20.04
     source ~/.local/bin/virtualenvwrapper.sh
     ```
 
-1. Get and install Avatar
+1.  Get and install Avatar
     ```sh
     cd deps
     git clone AVATAR_REPO
-    cd <repo_root>/avatar2
+    cd <halucinator_root>/avatar2
     pip install -e .
-    
-1. Get and build Avatar QEMU
+    ```    
+
+1.  Get and build Avatar QEMU
     ```sh
-    cd <repo_root>/deps/avatar2/targets/src
+    cd <halucinator_root>/deps/avatar2/targets/src
     git clone AVATAR_QEMU_REPO
-    cd ..  (<repo_root>/deps/avatar2/targets)
+    cd ..  (<halucinator_root>/deps/avatar2/targets)
     ./build_qemu.sh
     ```
 
 1.  Install Halucinator 
     Make sure you are in you virtual environment and then run
-    ```
+    ```sh
     pip install -r src/requirements.txt
     pip install -e src
     ```
-1. Install Avatar and Avatar QEMU
-   ```
-   clone halucinator fork of avatar2 into <halucinator_root>/deps/avatar2
-   clone HALucinator fork of avatar-qemu into <halucinator_root>/deps/avatar2/targets/src/avatar-qemu
-
-   cd <halucinator_root>/deps/avatar2
-   pip install -e .
-   cd  <halucinator_root>/deps/avatar2/targets
-   ./build_qemu.sh
-   ```
-
-1. Set environmental variable for HALUCINATOR_QEMU_ARM
-  ```sh
-  export HALUCINATOR_QEMU_ARM=<HALUCINOTOR_ROOT>/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
-  export HALUCINATOR_QEMU_ARM64=<HALUCINOTOR_ROOT>/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
-  ```
+    in the root HALucinator directory
+	
+1.  Set environmental variables
+    ```sh
+    export HALUCINATOR_QEMU_ARM=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
+    export HALUCINATOR_QEMU_ARM64=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+    export HALUCINATOR_QEMU_M68K=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/m68k-softmmu/qemu-system-m68k
+    ```
 
 1.  Simlink gdb-multiarch to arm-none-eabi-gdb
     If you don't have arm-none-eabi-gdb on your path symlink gdb-multiarch to it.
@@ -124,8 +117,9 @@ the virtual environment using the postactivate and predeactivate scripts below.
 Contents of $VIRTUAL_ENV/bin/postactivate
 
 ```sh
-  export HALUCINATOR_QEMU_ARM=<HALUCINOTOR_ROOT>/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
-  export HALUCINATOR_QEMU_ARM64=<HALUCINOTOR_ROOT>/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+  export HALUCINATOR_QEMU_ARM=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
+  export HALUCINATOR_QEMU_ARM64=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+  export HALUCINATOR_QEMU_M68K=<HALUCINATOR_ROOT>/deps/avatar2/targets/build/qemu/m68k-softmmu/qemu-system-m68k
 ```
 
 Contents of $VIRTUAL_ENV/bin/predeactivate
@@ -133,6 +127,7 @@ Contents of $VIRTUAL_ENV/bin/predeactivate
 ```sh
 unset HALUCINATOR_QEMU_ARM
 unset HALUCINATOR_QEMU_ARM64
+unset HALUCINATOR_QEMU_M68K
 ```
 
 ## Running

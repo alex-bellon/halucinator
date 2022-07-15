@@ -9,8 +9,8 @@ set -x
 sudo apt install -y ethtool python-tk gdb-multiarch tcpdump
 
 VIRT_ENV="halucinator"
-AVATAR_REPO=https://github.com/avatartwo/avatar2.git
-AVATAR_QEMU_REPO=
+AVATAR_REPO=git@github.com:halucinator/avatar2.git
+AVATAR_QEMU_REPO=git@github.com:halucinator/avatar-qemu.git
 
 CREATE_VIRT_ENV=true
 

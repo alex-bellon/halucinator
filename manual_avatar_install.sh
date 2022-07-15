@@ -1,26 +1,25 @@
-#!/bin/bash
-. /etc/bash_completion
-set -e 
-set -x
+HALUCINATOR_ROOT="$HOME/halucinator"
 
-AVATAR_REPO=https://github.com/avatartwo/avatar2.git
+cd $HALUCINATOR_ROOT
+./install_deps.sh
 
-# If avatar already cloned just pull
-if pushd deps/avatar2; then
-    git pull
-    popd
-else
-    git clone  "$AVATAR_REPO" deps/avatar2    
-fi
+VIRT_ENV="halucinator"
+python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
 
-# Setup avatar2
-pushd deps/avatar2
-git submodule update --init --recursive
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+export WORKON_HOME=$HOME/.virtualenvs
+export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.local/bin/virtualenv
+source /usr/local/bin/virtualenvwrapper.sh
+
+pip install -r src/requirements.txt
+pip install -e src
+
+cd $HALUCINATOR_ROOT/deps/avatar2
 pip install -e .
-
-pushd targets
+cd $HALUCINATOR_ROOT/deps/avatar2/targets
 ./build_qemu.sh
-#./build_panda.sh
-popd
-popd
 
+export HALUCINATOR_QEMU_ARM=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
+export HALUCINATOR_QEMU_ARM64=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+
+sudo ln /usr/bin/gdb-multiarch /usr/bin/arm-none-eabi-gdb
