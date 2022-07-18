@@ -12,12 +12,6 @@ import struct
 import binascii
 from .. import hal_log, hal_config
 
-from capstone import *
-from keystone.keystone_const import *
-from unicorn import *
-from unicorn.arm_const import *
-from collections import deque
-
 log = logging.getLogger(__name__)
 hal_log = hal_log.getHalLogger()
 
@@ -54,6 +48,7 @@ class AllocedMemory():
         self.base_addr = self.base_addr if self.base_addr <= block.base_addr else block.base_addr
 
 class M68KQemuTarget(QemuTarget):
+    # TODO: all of these functions were written for ARM, I don't know if they work
     '''
         Implements a QEMU target that has function args for use with
         halucinator.  Enables read/writing and returning from
@@ -67,14 +62,6 @@ class M68KQemuTarget(QemuTarget):
         self.init_halucinator_heap()
         self.calls_memory_blocks = {}  # Look up table of allocated memory
                                        # used to perform calls
-        # self._arch.capstone_arch = CS_ARCH_ARM
-        # self._arch.keystone_arch = KS_ARCH_ARM
-        # self._arch.capstone_mode = CS_MODE_LITTLE_ENDIAN | CS_MODE_THUMB 
-        # self._arch.keystone_arch = KS_ARCH_ARM
-        # #Make big endian, because host is BE, otherwise have to reverse everything when writing to memory
-        # self._arch.keystone_mode = KS_MODE_LITTLE_ENDIAN | KS_MODE_THUMB 
-        # self._arch.unicorn_arch = UC_ARCH_ARM
-        # self._arch.unicorn_mode = UC_MODE_LITTLE_ENDIAN | UC_MODE_THUMB
 
 
     def read_string(self, addr, max_len=256):
@@ -147,7 +134,8 @@ class M68KQemuTarget(QemuTarget):
         else:
             self.free_scratch_memory(merged_block)
 
-
+    # Currently this is only doing stack-based calling convention
+    # TODO: figure out how to support multiple caling conventions
     def get_arg(self, idx):
         '''
             Gets the value for a function argument (zero indexed)
@@ -155,11 +143,9 @@ class M68KQemuTarget(QemuTarget):
             :param idx  The argument index to return
             :returns    Argument value
         '''
-        if idx >= 0 and idx < 4:
-            return self.read_register("r%i" % idx)
-        elif idx >= 4:
+        if idx >= 0:
             sp = self.read_register("sp")
-            stack_addr = sp + (idx-4) * 4
+            stack_addr = sp + idx * 4
             return self.read_memory(stack_addr, 4, 1)
         else:
             raise ValueError("Invalid arg index")
@@ -170,27 +156,14 @@ class M68KQemuTarget(QemuTarget):
 
             :param args:  Iterable of args to set
         '''
-        for idx, value in enumerate(args[0:4]):
-            if idx < 4:
-                self.write_register(("r%i" % idx), value)
-            else:
-                break
         
         sp = self.read_register("sp")
-        for idx, value in enumerate(args[:3:-1]):
+        for idx, value in enumerate(args[::-1]):
             sp -= 4
             self.write_memory(sp, 4, value)
             
-        # if len(args)>=4:
-        #     sp += 4
         self.write_register('sp', sp)
         return sp
-
-    def push_lr(self):
-        sp = self.read_register('sp')
-        sp -= 4
-        self.write_memory(sp, 4,self.read_register('lr'))
-        self.write_register('sp', sp)
 
     def get_ret_addr(self):
         '''
@@ -198,20 +171,31 @@ class M68KQemuTarget(QemuTarget):
 
             :returns Return address of the function call
         '''
-        return self.regs.lr
+        sp = self.read_register("sp")
+        ret_addr = self.read_memory(sp, 4, 1)
+        sp += 4
+        self.write_register("sp", sp)
+
+        return ret_addr
 
     def set_ret_addr(self, ret_addr):
         '''
             Sets the return address for the function call
             :param ret_addr Value for return address
         '''
-        self.regs.lr = ret_addr
+        sp = self.read_register("sp")
+        ret_addr = self.read_memory(sp, 4, 1)
+        sp -= 4
+        self.write_memory(sp, 4, ret_addr)
+        self.write_register("sp", sp)
 
     def execute_return(self, ret_value):
         if ret_value != None:
-            # Puts ret value in r0
-            self.regs.r0 = ret_value & 0xFFFFFFFF #Truncate to 32 bits
-        self.regs.pc = self.regs.lr
+            # Puts ret value in d0
+            # TODO: do I need to handle two return values? Or address returns
+            # https://wiki.freepascal.org/m68k
+            self.regs.d0 = ret_value & 0xFFFFFFFF #Truncate to 32 bits
+        self.regs.pc = get_ret_addr(self) 
 
 
     def get_irq_base_addr(self):
@@ -329,20 +313,20 @@ class M68KQemuTarget(QemuTarget):
             instrs = deque()
             # Build instructions in reverse order so we know offset to end
             # Where we store the address of the function to be called
-            
+           
             instrs.append(struct.pack('<I', addr))  # Address of callee
-            instrs.append(self.assemble("mov pc, lr"))  # Return
+            instrs.append(self.assemble("mov (sp)+, pc"))  # Return
             # import IPython; IPython.embed()
             offset = len(b''.join(instrs)) #PC is two instructions ahead so need to calc offset
                                           # two instructions before its execution
-            instrs.append(self.assemble("pop {lr}"))  # Retore LR
-           
-            # Clean up stack args
-            if len(args) > 4:
-                stack_var_size = (len(args) - 4) * 4
-                instrs.append(self.assemble('add sp, sp, #%i'% stack_var_size))
-                offset += 4
+            #instrs.append(self.assemble("pop {lr}"))  # Retore LR
             
+            # Clean up stack args
+            stack_var_size = (len(args)) * 4
+            instrs.append(self.assemble('addi #%i, sp'% stack_var_size))
+            offset += 4
+            
+            # TODO: Update from here down
             instrs.append(self.assemble('blx lr'))    # Make Call
             instrs.append(self.assemble("ldr lr, [pc, #%i]" % offset)) # Load Callee Addr
             # instrs.append(self.assemble("push {lr}")) # Have to Save before
