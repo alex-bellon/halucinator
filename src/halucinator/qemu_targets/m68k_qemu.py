@@ -279,20 +279,22 @@ class M68KQemuTarget(QemuTarget):
         raise NotImplementedError("Calling Varg functions not supported")
 
     def call(self, callee, args=None, bp_handler_cls=None, ret_bp_handler=None,
-            debug=False):
+            call_conv=None, debug=False):
         '''
             Calls a function in the binary and returning to ret_bp_handler.
             Using this without side effects requires conforming to calling
-            convention (e.g R0-R3 have parameters and are scratch registers 
-            (callee save),if other registers are modified they need to be 
+            convention (e.g. R0-R3 have parameters and are scratch registers 
+            (callee save), if other registers are modified they need to be 
             saved and restored)
 
             :param callee:   Address or name of function to be called
-            :param args:     An interable containing the args to called the function
+            :param args:     An iterable containing the args to called function
             :param bp_handler_cls:  Instance of class containing next bp_handler
                                     or string for that class
             :param ret_bp_handler:  String of used in @bp_handler to identify 
                                     method to use for return bp_handler
+            :param call_conv:       Calling convention for function to be called,
+                                    currently either "STACK" or "REG"
         '''
         
         if type(callee) == int:
@@ -318,20 +320,17 @@ class M68KQemuTarget(QemuTarget):
             instrs.append(self.assemble("mov (sp)+, pc"))  # Return
             # import IPython; IPython.embed()
             offset = len(b''.join(instrs)) #PC is two instructions ahead so need to calc offset
-                                          # two instructions before its execution
-            #instrs.append(self.assemble("pop {lr}"))  # Retore LR
-            
-            # Clean up stack args
-            stack_var_size = (len(args)) * 4
-            instrs.append(self.assemble('addi #%i, sp'% stack_var_size))
-            offset += 4
-            
-            # TODO: Update from here down
-            instrs.append(self.assemble('blx lr'))    # Make Call
-            instrs.append(self.assemble("ldr lr, [pc, #%i]" % offset)) # Load Callee Addr
-            # instrs.append(self.assemble("push {lr}")) # Have to Save before
+                                          # two instructions before its execution 
+    
+            # Clean up stack based registers if needed
+            if calling_conv == "STACK":
+                stack_var_size = (len(args)) * 4
+                instrs.append(self.assemble("addi #%i, sp" % stack_var_size))
+                offset += 4
+
+            instrs.append(self.assemble("jsr a0")) # Make Call
+            instrs.append(self.assemble("move.l (%i, pc), a0" % offset)) # Load Callee Addr
             instructions = b''.join(instrs)
-            # instr_bytes = bytearray(instructions,'latin-1')
             mem = self.hal_alloc(len(instructions))
             
             bytes_written = 0
@@ -351,7 +350,7 @@ class M68KQemuTarget(QemuTarget):
 
                 # Set break point before this function returns so new BP handler
                 # can do its stuff if set
-                if len(instrs) == 1:  # last "intruction written is addr"
+                if len(instrs) == 1:  # last instruction written is addr
                     if bp_handler_cls is not None and ret_bp_handler is not None:
                         self.set_bp(inst_addr, bp_handler_cls, ret_bp_handler)
                 bytes_written += len(bytearr)
