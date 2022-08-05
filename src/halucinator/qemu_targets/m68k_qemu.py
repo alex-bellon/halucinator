@@ -56,8 +56,6 @@ class M68KQemuTarget(QemuTarget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.irq_base_addr = None
-        self.avatar.load_plugin('assembler')
-        self.avatar.load_plugin('disassembler')
         self.init_halucinator_heap()
         self.calls_memory_blocks = {}  # Look up table of allocated memory
                                        # used to perform calls
