@@ -48,7 +48,6 @@ class AllocedMemory():
         self.base_addr = self.base_addr if self.base_addr <= block.base_addr else block.base_addr
 
 class M68KQemuTarget(QemuTarget):
-    # TODO: all of these functions were written for ARM, I don't know if they work
     '''
         Implements a QEMU target that has function args for use with
         halucinator.  Enables read/writing and returning from
@@ -317,7 +316,8 @@ class M68KQemuTarget(QemuTarget):
             # Where we store the address of the function to be called
            
             instrs.append(struct.pack('<I', addr))  # Address of callee
-            instrs.append(self.assemble("mov (sp)+, pc"))  # Return
+            instrs.append(struct.pack('<I, 0x2e97'))  # move.l (sp)+, pc      
+
             # import IPython; IPython.embed()
             offset = len(b''.join(instrs)) #PC is two instructions ahead so need to calc offset
                                           # two instructions before its execution 
@@ -325,11 +325,11 @@ class M68KQemuTarget(QemuTarget):
             # Clean up stack based registers if needed
             if calling_conv == "STACK":
                 stack_var_size = (len(args)) * 4
-                instrs.append(self.assemble("addi #%i, sp" % stack_var_size))
-                offset += 4
+                instrs.append(struct.pack('<I', 0x048f00000000 + stack_var_size)) # addi #(stack_var_size), sp
+                offset += 6
 
-            instrs.append(self.assemble("jsr a0")) # Make Call
-            instrs.append(self.assemble("move.l (%i, pc), a0" % offset)) # Load Callee Addr
+            instrs.append(struct.pack('<I', 0x4e90)) # jsr (a0)
+            instrs.append(struct.pack('<I', 0x207a0000 + offset)) # move.l ((offset), pc), a0 
             instructions = b''.join(instrs)
             mem = self.hal_alloc(len(instructions))
             
@@ -340,13 +340,9 @@ class M68KQemuTarget(QemuTarget):
                 self.write_memory(inst_addr, 1, 
                                     bytearr, len(bytearr), raw=True)
                 
-                dis = self.disassemble(inst_addr)
-                dis_str = dis[0].insn_name() + " " + dis[0].op_str
-
-                log.debug("Injected %#x:  %s\t %s " % (
+                log.debug("Injected %#x:  %s" % (
                     inst_addr, 
-                    binascii.hexlify(bytearr),
-                    dis_str))
+                    binascii.hexlify(bytearr))
 
                 # Set break point before this function returns so new BP handler
                 # can do its stuff if set
