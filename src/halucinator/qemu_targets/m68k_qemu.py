@@ -338,13 +338,12 @@ class M68KQemuTarget(QemuTarget):
                 self.write_memory(inst_addr, 1, 
                                     bytearr, len(bytearr), raw=True)
                 
-                log.debug("Injected %#x:  %s" % (
-                    inst_addr, 
-                    binascii.hexlify(bytearr))
+                log.debug("Injected %#x:  %s" % (inst_addr, 
+                    binascii.hexlify(bytearr)))
 
                 # Set break point before this function returns so new BP handler
                 # can do its stuff if set
-                if len(instrs) == 1:  # last instruction written is addr
+                if len(instrs) == 1: # last instruction written is addr
                     if bp_handler_cls is not None and ret_bp_handler is not None:
                         self.set_bp(inst_addr, bp_handler_cls, ret_bp_handler)
                 bytes_written += len(bytearr)

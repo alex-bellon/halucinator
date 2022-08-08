@@ -98,6 +98,46 @@ class ARMFunctionCaller(FunctionCaller):
         self.qemu.regs.lr = self.return_addr
         self.qemu.regs.pc = self.callee_addr 
 
+class M68kFunctionCaller(FunctionCaller):
+    def __init__(self, qemu, start_addr, size, 
+        callee_addr, args, callee_fname=None):
+
+        '''
+            Setups M68K FunctionCaller with desending stack, memory looks like
+            
+            +-------------+ highest addr
+            | return addr |
+            + ------------+
+            |    Stack    |
+            |      |      |
+            |      |      |
+            |      V      |
+            |             |
+            +-------------+
+        '''
+        super().__init__(qemu, start_addr, size, callee_addr, args, callee_fname)
+
+        #Uses decending stack so set sp to top of memory
+        self.initial_sp = self.start_addr + size - self.reg_size()
+        #TODO fix so multiple return break points can be used
+        self.return_addr = self.start_addr + size & 0xFFFFFFFE 
+
+    def setup_stack_and_args(self):
+        for idx, arg in enumerate(self.args):
+            if idx == 4:
+                break
+            self.qemu.write_register("r%i"% idx, arg)
+            
+
+        if len(self.args) > 4:
+            raise (NotImplementedError("Stack parameters not supported yet"))
+
+        self.qemu.regs.sp = self.initial_sp
+    
+    def _call(self):
+        self.qemu.regs.lr = self.return_addr
+        self.qemu.regs.pc = self.callee_addr 
+
 class FunctionCallerIntercept():
 
     MEMORY_REGION_NAME = "halucinator"

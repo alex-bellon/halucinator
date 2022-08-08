@@ -32,7 +32,7 @@ hal_log.setLogConfig()
 PATCH_MEMORY_SIZE = 4096
 INTERCEPT_RETURN_INSTR_ADDR = 0x20000000 - PATCH_MEMORY_SIZE
 ARCH_LUT={'cortex-m3': ARM_CORTEX_M3, 'arm': ARM, 'arm64': ARM64, 'm68k': M68K}
-QEMU_ARCH_LUT={'cortex-m3': ARMv7mQemuTarget, 'arm': ARMQemuTarget, 'arm64': ARM64QemuTarget, 'm68k': M6KQemuTarget}
+QEMU_ARCH_LUT={'cortex-m3': ARMv7mQemuTarget, 'arm': ARMQemuTarget, 'arm64': ARM64QemuTarget, 'm68k': M68KQemuTarget}
 
 
 def add_patch_memory(avatar, qemu):
