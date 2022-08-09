@@ -131,35 +131,50 @@ class M68KQemuTarget(QemuTarget):
         else:
             self.free_scratch_memory(merged_block)
 
-    # Currently this is only doing stack-based calling convention
-    # TODO: figure out how to support multiple caling conventions
-    def get_arg(self, idx):
+    def get_arg(self, idx, call_conv=None, prefix=None):
         '''
             Gets the value for a function argument (zero indexed)
 
             :param idx  The argument index to return
+            :param call_conv Calling convention (STACK or REG)
+            :param prefix    Register prefix (a or d)
             :returns    Argument value
         '''
-        if idx >= 0:
-            sp = self.read_register("sp")
-            stack_addr = sp + idx * 4
-            return self.read_memory(stack_addr, 4, 1)
-        else:
-            raise ValueError("Invalid arg index")
+        if call_conv == "STACK":
+            if idx >= 0:
+                sp = self.read_register("sp")
+                stack_addr = sp + idx * 4
+                return self.read_memory(stack_addr, 4, 1)
+            else:
+                raise ValueError("Invalid arg index")
+        if call_conv == "REG":
+            if idx >= 0 and idx <= 7:
+                return self.read_register("%s%i" % (idx, prefix))
+            else:
+                raise ValueError("Invalid arg index")
 
-    def set_args(self, args):
+    def set_args(self, args, call_conv=None):
         '''
             Sets the value for a function argument (zero indexed)
 
             :param args:  Iterable of args to set
+            :param call_conv: String denoting calling convention
         '''
         
-        sp = self.read_register("sp")
-        for idx, value in enumerate(args[::-1]):
-            sp -= 4
-            self.write_memory(sp, 4, value)
+        if call_conv == "STACK":
+            sp = self.read_register("sp")
+            for idx, value in enumerate(args[::-1]):
+                sp -= 4
+                self.write_memory(sp, 4, value)
             
-        self.write_register('sp', sp)
+            self.write_register('sp', sp)
+    
+        if call_conv == "REG":
+            for idx, value in enumerate(args):
+                print(type(args))
+                self.write_register('d%i' % idx, value)
+                raise NotImplementedError("Can't distinguish between address and data registersa") 
+
         return sp
 
     def get_ret_addr(self):
@@ -189,7 +204,7 @@ class M68KQemuTarget(QemuTarget):
     def execute_return(self, ret_value):
         if ret_value != None:
             # Puts ret value in d0
-            # TODO: do I need to handle two return values? Or address returns
+            # TODO balex: do I need to handle two return values? Or address returns
             # https://wiki.freepascal.org/m68k
             self.regs.d0 = ret_value & 0xFFFFFFFF #Truncate to 32 bits
         self.regs.pc = get_ret_addr(self) 
@@ -321,7 +336,7 @@ class M68KQemuTarget(QemuTarget):
                                           # two instructions before its execution 
     
             # Clean up stack based registers if needed
-            if calling_conv == "STACK":
+            if call_conv == "STACK":
                 stack_var_size = (len(args)) * 4
                 instrs.append(struct.pack('<I', 0x048f00000000 + stack_var_size)) # addi #(stack_var_size), sp
                 offset += 6

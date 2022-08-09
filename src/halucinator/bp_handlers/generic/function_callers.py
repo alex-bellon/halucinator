@@ -100,10 +100,10 @@ class ARMFunctionCaller(FunctionCaller):
 
 class M68kFunctionCaller(FunctionCaller):
     def __init__(self, qemu, start_addr, size, 
-        callee_addr, args, callee_fname=None):
+        callee_addr, args, callee_fname=None, call_conv="STACK"):
 
         '''
-            Setups M68K FunctionCaller with desending stack, memory looks like
+            Setups M68K FunctionCaller with descending stack, memory looks like
             
             +-------------+ highest addr
             | return addr |
@@ -117,25 +117,28 @@ class M68kFunctionCaller(FunctionCaller):
         '''
         super().__init__(qemu, start_addr, size, callee_addr, args, callee_fname)
 
-        #Uses decending stack so set sp to top of memory
+        #Uses descending stack so set sp to top of memory
         self.initial_sp = self.start_addr + size - self.reg_size()
         #TODO fix so multiple return break points can be used
         self.return_addr = self.start_addr + size & 0xFFFFFFFE 
 
     def setup_stack_and_args(self):
         for idx, arg in enumerate(self.args):
-            if idx == 4:
-                break
-            self.qemu.write_register("r%i"% idx, arg)
+            print(type(arg))
+            if call_conv == "STACK":
+                # TODO: add stack support here
+                raise (NotImplementedError("Stack parameters not supported yet"))
+                #self.qemu.
+            if call_conv == "REG":
+                # TODO: figure out how to test if argument is address or data
+                raise (NotImplementedError("Cannot distinguish between address and data arguments yet"))
+                self.qemu.write_register("d%i"% idx, arg)
             
-
-        if len(self.args) > 4:
-            raise (NotImplementedError("Stack parameters not supported yet"))
-
         self.qemu.regs.sp = self.initial_sp
     
     def _call(self):
-        self.qemu.regs.lr = self.return_addr
+        # TODO: add stack support here
+        raise (NotImplementedError("Stack parameters not supported yet"))
         self.qemu.regs.pc = self.callee_addr 
 
 class FunctionCallerIntercept():
@@ -164,7 +167,8 @@ class FunctionCallerIntercept():
     def register_handler(self, qemu, addr, function, callee, args=None, 
                          interactive=False, 
                          stack_size=161984,
-                         is_return=False,break_type="BP",watchpoint = ""):
+                         is_return=False,break_type="BP",watchpoint = "",
+                         call_conv="REG"):
         '''
         This will be called by the intercept registration function.
         **Note** only a single instance of the class is create, and this 
@@ -193,7 +197,7 @@ class FunctionCallerIntercept():
         self.memory_addr, self.memory_size = self.find_memory_region()
         self.next_stack_addr = self.memory_addr
 
-        if self.qemu.avatar.arch != avatar2.archs.arm.ARM:
+        if self.qemu.avatar.arch not in [avatar2.archs.arm.ARM, avatar2.archs.m68k.M68K]:
             raise(ValueError("Architecture (%s) not supported") %
                   (str(self.qemu.avatar.arch)))
 
@@ -226,6 +230,25 @@ class FunctionCallerIntercept():
                 self.setup_return_bp(function, callee_addr, return_addr)
             else:
                 self.setup_return_bp(function, callee_addr, return_addr,break_type="WP",rw=watchpoint)
+ 
+        if self.qemu.avatar.arch == avatar2.archs.m68k.M68K:
+            stack_addr = self.get_stack_addr(stack_size)
+            caller = M68KFunctionCaller(self.qemu, stack_addr, stack_size,
+                                      callee_addr, args, callee_fname, call_conv)
+            return_addr = caller.get_return_addr()
+            # Setup state to be used for both calll and return break points
+            self.function_caller[addr] = caller
+            self.function_caller[return_addr] = caller
+            # Interactive set for both call and return
+            self.interactive[addr] = interactive
+            self.interactive[return_addr] = interactive
+            # Set break point on return address that will execute function 
+            # clean up
+            if watchpoint == "":
+                self.setup_return_bp(function, callee_addr, return_addr)
+            else:
+                self.setup_return_bp(function, callee_addr, return_addr,break_type="WP",rw=watchpoint)
+
         return FunctionCallerIntercept.initiate_call_handler
 
     def get_stack_addr(self, size):
