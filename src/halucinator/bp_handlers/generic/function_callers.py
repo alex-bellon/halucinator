@@ -126,18 +126,18 @@ class M68kFunctionCaller(FunctionCaller):
         for idx, arg in enumerate(self.args):
             print(type(arg))
             if call_conv == "STACK":
-                # TODO: add stack support here
+                # TODO balex: add stack support here
                 raise (NotImplementedError("Stack parameters not supported yet"))
                 #self.qemu.
             if call_conv == "REG":
-                # TODO: figure out how to test if argument is address or data
+                # TODO balex: figure out how to test if argument is address or data
                 raise (NotImplementedError("Cannot distinguish between address and data arguments yet"))
                 self.qemu.write_register("d%i"% idx, arg)
             
         self.qemu.regs.sp = self.initial_sp
     
     def _call(self):
-        # TODO: add stack support here
+        # TODO balex: add stack support here
         raise (NotImplementedError("Stack parameters not supported yet"))
         self.qemu.regs.pc = self.callee_addr 
 

@@ -72,7 +72,7 @@ class HalMemConfig(object):
 class HalInterceptConfig(object):
 
     def __init__(self, config_file, cls, function, addr=None, symbol=None,
-                 class_args=None, registration_args=None, call_conv="STACK",
+                 class_args=None, registration_args=None, call_conv=None,
                  run_once=False, watchpoint=False):
         self.config_file = config_file
         self.symbol = symbol
@@ -138,7 +138,7 @@ class HalInterceptConfig(object):
             hal_log.error("Intercept addr invalid\n\t%s"% self)
             valid = False
 
-        if self.call_conv not in ("STACK", "REG"):
+        if self.call_conv and self.call_conv not in ("STACK", "REG"):
             hal_log.error("Intercept calling convention must be STACK or REG")
             valid = False
 
