@@ -100,7 +100,7 @@ class ARMFunctionCaller(FunctionCaller):
 
 class M68kFunctionCaller(FunctionCaller):
     def __init__(self, qemu, start_addr, size, 
-        callee_addr, args, callee_fname=None, call_conv="STACK"):
+        callee_addr, args, callee_fname=None, call_conv=None):
 
         '''
             Setups M68K FunctionCaller with descending stack, memory looks like
@@ -168,7 +168,7 @@ class FunctionCallerIntercept():
                          interactive=False, 
                          stack_size=161984,
                          is_return=False,break_type="BP",watchpoint = "",
-                         call_conv="REG"):
+                         call_conv=None):
         '''
         This will be called by the intercept registration function.
         **Note** only a single instance of the class is create, and this 

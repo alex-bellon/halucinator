@@ -1,71 +1,28 @@
-#!/bin/bash
-. /etc/bash_completion
+HALUCINATOR_ROOT="$HOME/halucinator"
 
-echo "Please See README.md for instructions"
-exit
-
-set -e 
-set -x
-sudo apt install -y ethtool python-tk gdb-multiarch tcpdump
+cd $HALUCINATOR_ROOT
+./install_deps.sh
 
 VIRT_ENV="halucinator"
-AVATAR_REPO=git@github.com:halucinator/avatar2.git
-AVATAR_QEMU_REPO=git@github.com:halucinator/avatar-qemu.git
+python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
 
-CREATE_VIRT_ENV=true
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+export WORKON_HOME=$HOME/.virtualenvs
+export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.local/bin/virtualenv
+source /usr/local/bin/virtualenvwrapper.sh
 
-#Look for flags and override
-while [ -n "$1" ]; do
- case "$1" in
- -e)
-    VIRT_ENV="$2"
-    echo "Using Virtual Environment $2"
-    shift
-    ;;
- -r)
-    AVATAR_REPO="$2"
-    AVATAR_COMMIT="HEAD"
-    echo "Using Avatar Repo $2"
-    shift
-    ;;
- -nc)
-    CREATE_VIRT_ENV=false
-    ;;
-  * ) echo "Option $1 not recognized";;
- esac
- shift
-done
-
-
-if [ "$CREATE_VIRT_ENV" = true ]; then
-   echo "Created Virtual Environment $VIRT_ENV"
-   mkvirtualenv -p `which python3` "$VIRT_ENV"
-fi
-
-# Activate the virtual environment ('workon' doesn't work in the script)
-source "$WORKON_HOME/$VIRT_ENV/bin/activate"
-
-
-# If avatar already cloned just pull
-if pushd deps/avatar2; then
-    git pull
-    popd
-else
-    git clone  "$AVATAR_REPO" deps/avatar2    
-fi
-
-pushd deps/avatar2
-
-#Get submodules of avatar and build qemu
-git submodule update --init --recursive
-pip install -e .
-
-pushd targets
-./build_qemu.sh
-#./build_panda.sh
-popd
-popd
-
-# Install halucinator dependencies
 pip install -r src/requirements.txt
 pip install -e src
+
+git clone https://github.com/alex-bellon/avatar2 $HALUCINATOR_ROOT/deps/avatar2
+git clone https://github.com/alex-bellon/avatar-qemu.git $HALUCINATOR_ROOT/deps/avatar2/targets/avatar-qemu
+
+cd $HALUCINATOR_ROOT/deps/avatar2
+pip install -e .
+cd $HALUCINATOR_ROOT/deps/avatar2/targets
+./build_qemu.sh
+
+export HALUCINATOR_QEMU_ARM=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
+export HALUCINATOR_QEMU_ARM64=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
+
+sudo ln /usr/bin/gdb-multiarch /usr/bin/arm-none-eabi-gdb

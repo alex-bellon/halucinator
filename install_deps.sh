@@ -26,12 +26,12 @@ esac
 
 sudo pip3 install virtualenv virtualenvwrapper
 
-# VIRT_ENV="halucinator"
-# python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
+VIRT_ENV="halucinator"
+python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
 
 # # Activate the virtual environment (workon doesn't work in the script)
 # echo "================================================"
 # echo "$VIRT_ENV virt environment created now run:" 
 # echo ""
-# echo "source ~/.virtualenvs/$VIRT_ENV/bin/activate"
+source ~/.virtualenvs/$VIRT_ENV/bin/activate
 # echo "./setup.sh"
