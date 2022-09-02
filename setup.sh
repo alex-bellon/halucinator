@@ -15,7 +15,7 @@ pip install -r $HALUCINATOR_ROOT/src/requirements.txt
 pip install -e $HALUCINATOR_ROOT/src
 
 git clone https://github.com/alex-bellon/avatar2 $HALUCINATOR_ROOT/deps/avatar2
-git clone https://github.com/alex-bellon/avatar-qemu.git $HALUCINATOR_ROOT/deps/avatar2/targets/avatar-qemu
+git clone https://github.com/alex-bellon/avatar-qemu.git $HALUCINATOR_ROOT/deps/avatar2/targets/src/avatar-qemu
 
 cd $HALUCINATOR_ROOT/deps/avatar2
 pip install -e .
