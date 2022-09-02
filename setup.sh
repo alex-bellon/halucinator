@@ -1,4 +1,4 @@
-HALUCINATOR_ROOT="$HOME/halucinator"
+HALUCINATOR_ROOT="$CWD"
 
 cd $HALUCINATOR_ROOT
 ./install_deps.sh
