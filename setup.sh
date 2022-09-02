@@ -1,7 +1,7 @@
-HALUCINATOR_ROOT="$CWD"
+HALUCINATOR_ROOT="$PWD"
 
 cd $HALUCINATOR_ROOT
-./install_deps.sh
+.$HALUCINATOR_ROOT/install_deps.sh
 
 VIRT_ENV="halucinator"
 python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
@@ -11,8 +11,8 @@ export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.local/bin/virtualenv
 source /usr/local/bin/virtualenvwrapper.sh
 
-pip install -r src/requirements.txt
-pip install -e src
+pip install -r $HALUCINATOR_ROOT/src/requirements.txt
+pip install -e $HALUCINATOR_ROOT/src
 
 git clone https://github.com/alex-bellon/avatar2 $HALUCINATOR_ROOT/deps/avatar2
 git clone https://github.com/alex-bellon/avatar-qemu.git $HALUCINATOR_ROOT/deps/avatar2/targets/avatar-qemu
