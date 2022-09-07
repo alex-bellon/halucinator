@@ -207,7 +207,7 @@ class M68KQemuTarget(QemuTarget):
             # TODO balex: do I need to handle two return values? Or address returns
             # https://wiki.freepascal.org/m68k
             self.regs.d0 = ret_value & 0xFFFFFFFF #Truncate to 32 bits
-        self.regs.pc = get_ret_addr(self) 
+        self.regs.pc = self.get_ret_addr() 
 
 
     def get_irq_base_addr(self):
