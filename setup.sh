@@ -1,7 +1,7 @@
 HALUCINATOR_ROOT="$PWD"
 
 cd $HALUCINATOR_ROOT
-.$HALUCINATOR_ROOT/install_deps.sh
+sh $HALUCINATOR_ROOT/install_deps.sh
 
 VIRT_ENV="halucinator"
 python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
@@ -20,7 +20,7 @@ git clone https://github.com/alex-bellon/avatar-qemu.git $HALUCINATOR_ROOT/deps/
 cd $HALUCINATOR_ROOT/deps/avatar2
 pip install -e .
 cd $HALUCINATOR_ROOT/deps/avatar2/targets
-./build_qemu.sh
+sh build_qemu.sh
 
 export HALUCINATOR_QEMU_ARM=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/arm-softmmu/qemu-system-arm
 export HALUCINATOR_QEMU_ARM64=$HALUCINATOR_ROOT/deps/avatar2/targets/build/qemu/aarch64-softmmu/qemu-system-aarch64
