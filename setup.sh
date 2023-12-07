@@ -9,7 +9,7 @@ python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_VIRTUALENV=$HOME/.local/bin/virtualenv
-source /usr/local/bin/virtualenvwrapper.sh
+source /usr/bin/virtualenvwrapper.sh
 
 pip install -r $HALUCINATOR_ROOT/src/requirements.txt
 pip install -e $HALUCINATOR_ROOT/src

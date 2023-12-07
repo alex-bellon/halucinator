@@ -13,7 +13,8 @@ fi
 case $DISTRO in
   "arch" )
     sudo pacman -S ethtool tk gdb tcpdump python-pip \
-                   python-virtualenv cmake gcc base-devel pixman
+                   python-virtualenv python-virtualenvwrapper \
+                   cmake gcc base-devel pixman
     ;;
   "debian" | "ubuntu" )
     sudo apt-get install -y ethtool python-tk gdb-multiarch tcpdump \
@@ -24,7 +25,7 @@ case $DISTRO in
   *) echo "Distro not supported" ;;
 esac
 
-sudo pip3 install virtualenv virtualenvwrapper
+#sudo pip3 install virtualenv virtualenvwrapper
 
 VIRT_ENV="halucinator"
 python3 -m venv ~/.virtualenvs/"$VIRT_ENV"
